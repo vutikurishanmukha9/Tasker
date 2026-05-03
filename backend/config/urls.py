@@ -5,9 +5,16 @@ All API endpoints are versioned under /api/v1/.
 """
 
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import include, path
 
 from tasks.views import DashboardView
+
+
+def health_check(request):
+    """Lightweight health check endpoint for Railway."""
+    return JsonResponse({"status": "ok"})
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -15,6 +22,7 @@ urlpatterns = [
     path("api/v1/projects/", include("projects.urls")),
     path("api/v1/tasks/", include("tasks.urls")),
     path("api/v1/dashboard/", DashboardView.as_view(), name="dashboard"),
+    path("health/", health_check, name="health-check"),
 ]
 
 # ──────────────────────────────────────────────
