@@ -1,40 +1,49 @@
-import { useStore } from "@/store/StoreContext";
+import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/PageHeader";
-import { Avatar } from "@/components/Avatar";
-import { colorFor } from "@/lib/seed";
-import { formatDistanceToNow } from "date-fns";
-import { CheckCircle2, Clock, AlertTriangle, ListTodo } from "lucide-react";
+import { CheckCircle2, Clock, AlertTriangle, ListTodo, Loader2 } from "lucide-react";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { apiFetch } from "@/lib/api";
+import { DashboardData } from "@/lib/types";
 
 export default function Dashboard() {
-  const { tasks, users, projects } = useStore();
-  const total = tasks.length;
-  const done = tasks.filter((t) => t.status === "done").length;
-  const pending = tasks.filter((t) => t.status !== "done").length;
-  const overdue = tasks.filter(
-    (t) => t.dueDate && t.status !== "done" && new Date(t.dueDate).getTime() < Date.now(),
-  ).length;
-  const completion = total === 0 ? 0 : Math.round((done / total) * 100);
+  const { data: dashboard, isLoading, error } = useQuery({
+    queryKey: ["dashboard"],
+    queryFn: () => apiFetch<DashboardData>("/dashboard/").then(res => res.data),
+  });
 
-  const recent = [...tasks]
-    .flatMap((t) => t.activity.map((a) => ({ ...a, task: t })))
-    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
-    .slice(0, 8);
+  if (isLoading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error || !dashboard) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center text-destructive">
+        Failed to load dashboard data.
+      </div>
+    );
+  }
+
+  const { total_tasks, completed_tasks, pending_tasks, overdue_tasks, tasks_by_status } = dashboard;
+  const completion = total_tasks === 0 ? 0 : Math.round((completed_tasks / total_tasks) * 100);
 
   return (
     <div>
       <PageHeader title="Dashboard" subtitle="A quick overview of your team's work." />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat label="Total tasks" value={total} icon={<ListTodo className="h-4 w-4" />} />
-        <Stat label="Completed" value={done} icon={<CheckCircle2 className="h-4 w-4 text-accent" />} />
-        <Stat label="Pending" value={pending} icon={<Clock className="h-4 w-4" />} />
+        <Stat label="Total tasks" value={total_tasks} icon={<ListTodo className="h-4 w-4" />} />
+        <Stat label="Completed" value={completed_tasks} icon={<CheckCircle2 className="h-4 w-4 text-accent" />} />
+        <Stat label="Pending" value={pending_tasks} icon={<Clock className="h-4 w-4" />} />
         <Stat
           label="Overdue"
-          value={overdue}
+          value={overdue_tasks}
           icon={<AlertTriangle className="h-4 w-4 text-destructive" />}
-          tone={overdue > 0 ? "danger" : "default"}
+          tone={overdue_tasks > 0 ? "danger" : "default"}
         />
       </div>
 
@@ -47,54 +56,41 @@ export default function Dashboard() {
           <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
             <div className="h-full bg-accent transition-all" style={{ width: `${completion}%` }} />
           </div>
-
+          
           <div className="mt-8 space-y-4">
-            {projects.map((p) => {
-              const pt = tasks.filter((t) => t.projectId === p.id);
-              const pd = pt.filter((t) => t.status === "done").length;
-              const pct = pt.length === 0 ? 0 : Math.round((pd / pt.length) * 100);
-              return (
-                <div key={p.id}>
-                  <div className="mb-1.5 flex items-center justify-between text-sm">
-                    <span className="font-medium">{p.name}</span>
-                    <span className="tabular-nums text-muted-foreground">{pd}/{pt.length}</span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div className="h-full bg-foreground/80" style={{ width: `${pct}%` }} />
-                  </div>
+            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Task Breakdown</h3>
+            <div className="space-y-4">
+              <div>
+                <div className="mb-1.5 flex items-center justify-between text-sm">
+                  <span className="font-medium text-foreground">To Do</span>
+                  <span className="tabular-nums text-muted-foreground">{tasks_by_status.todo}</span>
                 </div>
-              );
-            })}
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div className="h-full bg-foreground/20" style={{ width: `${total_tasks ? (tasks_by_status.todo / total_tasks) * 100 : 0}%` }} />
+                </div>
+              </div>
+              
+              <div>
+                <div className="mb-1.5 flex items-center justify-between text-sm">
+                  <span className="font-medium text-foreground">In Progress</span>
+                  <span className="tabular-nums text-muted-foreground">{tasks_by_status.in_progress}</span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div className="h-full bg-primary" style={{ width: `${total_tasks ? (tasks_by_status.in_progress / total_tasks) * 100 : 0}%` }} />
+                </div>
+              </div>
+              
+              <div>
+                <div className="mb-1.5 flex items-center justify-between text-sm">
+                  <span className="font-medium text-foreground">Done</span>
+                  <span className="tabular-nums text-muted-foreground">{tasks_by_status.done}</span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div className="h-full bg-accent" style={{ width: `${total_tasks ? (tasks_by_status.done / total_tasks) * 100 : 0}%` }} />
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div className="rounded-lg border border-border bg-card p-6">
-          <h2 className="text-sm font-semibold">Activity</h2>
-          <ul className="mt-4 space-y-4">
-            {recent.map((a) => {
-              const u = users.find((x) => x.id === a.task.assigneeId);
-              return (
-                <li key={a.id} className="flex gap-3">
-                  {u ? (
-                    <Avatar name={u.name} color={colorFor(u.name)} size={28} />
-                  ) : (
-                    <span className="h-7 w-7 shrink-0 rounded-full bg-muted" />
-                  )}
-                  <div className="min-w-0 text-sm">
-                    <p className="text-foreground">
-                      <span className="font-medium">{a.text}</span>{" "}
-                      <span className="text-muted-foreground">on</span>{" "}
-                      <span className="font-medium">{a.task.title}</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(a.at), { addSuffix: true })}
-                    </p>
-                  </div>
-                </li>
-              );
-            })}
-            {recent.length === 0 && <li className="text-sm text-muted-foreground">No activity yet.</li>}
-          </ul>
         </div>
       </div>
     </div>

@@ -14,13 +14,20 @@ import { useStore } from "@/store/StoreContext";
 import { RoleBadge } from "@/components/StatusPill";
 import { colorFor } from "@/lib/seed";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
+import { DashboardData } from "@/lib/types";
 
 export function Topbar() {
-  const { currentUser, logout, tasks } = useStore();
+  const { currentUser, logout } = useStore();
   const navigate = useNavigate();
-  const overdue = tasks.filter(
-    (t) => t.dueDate && t.status !== "done" && new Date(t.dueDate).getTime() < Date.now(),
-  ).length;
+
+  const { data: dashboard } = useQuery({
+    queryKey: ["dashboard"],
+    queryFn: () => apiFetch<DashboardData>("/dashboard/").then(res => res.data),
+  });
+
+  const overdue = dashboard?.overdue_tasks || 0;
 
   if (!currentUser) return null;
 
@@ -42,9 +49,9 @@ export function Topbar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 rounded-md p-1 pl-1 pr-2 hover:bg-muted focus-ring">
-              <Avatar name={currentUser.name} color={colorFor(currentUser.name)} />
+              <Avatar name={currentUser.username} color={colorFor(currentUser.username)} />
               <div className="hidden text-left sm:block">
-                <div className="text-xs font-medium leading-tight">{currentUser.name}</div>
+                <div className="text-xs font-medium leading-tight">{currentUser.username}</div>
                 <div className="text-[11px] leading-tight text-muted-foreground">{currentUser.email}</div>
               </div>
             </button>

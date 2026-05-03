@@ -5,33 +5,50 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useStore } from "@/store/StoreContext";
-import { CheckSquare } from "lucide-react";
+import { CheckSquare, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { apiFetch } from "@/lib/api";
+import { User } from "@/lib/types";
 
 const schema = z.object({
   email: z.string().trim().email("Enter a valid email").max(255),
+  password: z.string().min(1, "Password is required"),
 });
 
 export default function Login() {
   const { login } = useStore();
   const nav = useNavigate();
-  const [email, setEmail] = useState("alex@acme.co");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const r = schema.safeParse({ email });
+    const r = schema.safeParse({ email, password });
     if (!r.success) return setErr(r.error.issues[0].message);
-    if (!login(email)) {
-      setErr("No account with that email. Try signing up.");
-      return;
+    
+    setIsLoading(true);
+    setErr(null);
+
+    try {
+      const res = await apiFetch<{ user: User; tokens: { access: string; refresh: string } }>("/auth/login/", {
+        data: { email, password },
+        skipAuth: true,
+      });
+      
+      login(res.data.tokens, res.data.user);
+      toast.success("Signed in successfully");
+      nav("/app");
+    } catch (error: any) {
+      setErr(error.message || "Failed to log in");
+    } finally {
+      setIsLoading(false);
     }
-    toast.success("Signed in");
-    nav("/app");
   };
 
   return (
-    <AuthShell title="Sign in to Tasker" subtitle="Use one of the seeded accounts to explore.">
+    <AuthShell title="Sign in to Tasker">
       <form onSubmit={submit} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="email">Work email</Label>
@@ -42,20 +59,31 @@ export default function Login() {
             value={email}
             onChange={(e) => { setEmail(e.target.value); setErr(null); }}
             placeholder="you@company.com"
+            disabled={isLoading}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => { setPassword(e.target.value); setErr(null); }}
+            disabled={isLoading}
           />
           {err && <p className="text-xs text-destructive">{err}</p>}
         </div>
-        <Button type="submit" className="w-full">Continue</Button>
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Continue
+        </Button>
         <p className="text-center text-sm text-muted-foreground">
           New here?{" "}
           <Link to="/signup" className="font-medium text-foreground underline-offset-4 hover:underline">
             Create an account
           </Link>
         </p>
-        <div className="rounded-md border border-border bg-surface p-3 text-xs text-muted-foreground">
-          Demo accounts: <span className="font-medium text-foreground">alex@acme.co</span> (admin),{" "}
-          <span className="font-medium text-foreground">priya@acme.co</span> (member)
-        </div>
       </form>
     </AuthShell>
   );
