@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, FolderKanban, ListChecks, Users, CheckSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -13,12 +13,12 @@ export function Sidebar() {
   const { pathname } = useLocation();
   return (
     <aside className="hidden md:flex w-60 shrink-0 flex-col border-r border-border bg-sidebar">
-      <div className="flex h-14 items-center gap-2 px-5 border-b border-sidebar-border">
+      <Link to="/app" className="flex h-14 items-center gap-2 px-5 border-b border-sidebar-border transition-opacity hover:opacity-80">
         <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
           <CheckSquare className="h-4 w-4" />
         </div>
         <span className="text-sm font-semibold tracking-tight">Tasker</span>
-      </div>
+      </Link>
       <nav className="flex-1 px-2 py-4">
         <p className="px-3 pb-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           Workspace
