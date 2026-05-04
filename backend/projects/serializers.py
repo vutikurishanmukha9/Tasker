@@ -10,6 +10,7 @@ class ProjectListSerializer(serializers.ModelSerializer):
 
     created_by = serializers.SerializerMethodField()
     member_count = serializers.SerializerMethodField()
+    team_members = UserListSerializer(many=True, read_only=True)
 
     class Meta:
         model = Project
@@ -19,6 +20,7 @@ class ProjectListSerializer(serializers.ModelSerializer):
             "description",
             "created_by",
             "member_count",
+            "team_members",
             "created_at",
         ]
 
