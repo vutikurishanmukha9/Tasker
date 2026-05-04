@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/PageHeader";
-import { CheckCircle2, Clock, AlertTriangle, ListTodo, Loader2 } from "lucide-react";
+import { CheckCircle2, Clock, AlertTriangle, ListTodo } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
@@ -14,8 +15,16 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="space-y-6">
+        <PageHeader title="Dashboard" subtitle="A quick overview of your team's work." />
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-28 rounded-lg" />
+          ))}
+        </div>
+        <div className="mt-6 grid gap-6 lg:grid-cols-3">
+          <Skeleton className="lg:col-span-2 h-[350px] rounded-lg" />
+        </div>
       </div>
     );
   }

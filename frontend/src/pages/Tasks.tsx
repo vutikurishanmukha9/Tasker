@@ -3,7 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { useStore } from "@/store/StoreContext";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TaskStatus, Task, Project } from "@/lib/types";
 import { TaskDialog } from "@/components/TaskDialog";
@@ -70,7 +71,16 @@ export default function Tasks() {
   };
 
   if (projectsLoading) {
-    return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-muted-foreground" /></div>;
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Tasks" subtitle="Drag cards across stages to update status." />
+        <div className="grid gap-4 lg:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-[400px] rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -97,7 +107,11 @@ export default function Tasks() {
       />
 
       {tasksLoading ? (
-         <div className="flex justify-center p-8"><Loader2 className="animate-spin text-muted-foreground" /></div>
+        <div className="grid gap-4 lg:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-[400px] rounded-lg" />
+          ))}
+        </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-3">
           {COLUMNS.map((c) => {

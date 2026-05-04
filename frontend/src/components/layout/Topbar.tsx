@@ -1,6 +1,5 @@
-import { Bell, Search, LogOut } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar } from "@/components/Avatar";
 import {
   DropdownMenu,
@@ -17,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { DashboardData } from "@/lib/types";
+import { GlobalSearch } from "@/components/GlobalSearch";
 
 export function Topbar() {
   const { currentUser, logout } = useStore();
@@ -33,10 +33,7 @@ export function Topbar() {
 
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur md:px-6">
-      <div className="relative max-w-md flex-1">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search tasks, projects, people…" className="h-9 pl-8 bg-surface border-border" />
-      </div>
+      <GlobalSearch />
       <div className="ml-auto flex items-center gap-1.5">
         <Button variant="ghost" size="icon" className="relative h-9 w-9">
           <Bell className="h-4 w-4" />
