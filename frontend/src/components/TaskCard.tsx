@@ -1,10 +1,11 @@
-import { Task } from "@/lib/types";
-import { useStore } from "@/store/StoreContext";
+import { Task, User } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { colorFor } from "@/lib/seed";
 import { format, isPast, isToday } from "date-fns";
 import { CalendarDays, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
 
 export function TaskCard({
   task,
@@ -17,16 +18,20 @@ export function TaskCard({
   onOpen: () => void;
   onEdit: () => void;
 }) {
-  const { users } = useStore();
-  const assignee = users.find((u) => u.id === task.assigneeId);
-  const due = task.dueDate ? new Date(task.dueDate) : null;
+  const { data: users } = useQuery({
+    queryKey: ["users"],
+    queryFn: () => apiFetch<{results: User[]}>("/auth/users/").then(res => res.data.results),
+  });
+
+  const assignee = users?.find((u) => u.id === task.assigned_to);
+  const due = task.due_date ? new Date(task.due_date) : null;
   const overdue = !!due && task.status !== "done" && isPast(due) && !isToday(due);
 
   return (
     <div
       draggable={draggable}
       onDragStart={(e) => {
-        e.dataTransfer.setData("text/task-id", task.id);
+        e.dataTransfer.setData("text/task-id", task.id.toString());
         e.dataTransfer.effectAllowed = "move";
       }}
       onClick={onOpen}
@@ -50,7 +55,7 @@ export function TaskCard({
           )}
         </div>
         {assignee ? (
-          <Avatar name={assignee.name} color={colorFor(assignee.name)} size={22} />
+          <Avatar name={assignee.username} color={colorFor(assignee.username)} size={22} />
         ) : (
           <span className="text-[11px] text-muted-foreground">Unassigned</span>
         )}

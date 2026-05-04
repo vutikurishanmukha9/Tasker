@@ -5,29 +5,73 @@ import { StatusPill } from "./StatusPill";
 import { Avatar } from "./Avatar";
 import { colorFor } from "@/lib/seed";
 import { format, formatDistanceToNow, isPast, isToday } from "date-fns";
-import { Calendar, Folder, User as UserIcon, Pencil, Trash2, AlertCircle } from "lucide-react";
+import { Calendar, Folder, User as UserIcon, Pencil, Trash2, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Task } from "@/lib/types";
+import { Task, Project, User } from "@/lib/types";
 import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
 
 export function TaskDetailDialog({
   taskId,
   onOpenChange,
   onEdit,
 }: {
-  taskId: string | null;
+  taskId: number | null;
   onOpenChange: (v: boolean) => void;
   onEdit: (t: Task) => void;
 }) {
-  const { tasks, users, projects, deleteTask, currentUser } = useStore();
-  const task = tasks.find((t) => t.id === taskId) || null;
-  if (!task) return <Dialog open={false} onOpenChange={onOpenChange}><DialogContent /></Dialog>;
+  const { currentUser } = useStore();
+  const queryClient = useQueryClient();
 
-  const assignee = users.find((u) => u.id === task.assigneeId);
-  const project = projects.find((p) => p.id === task.projectId);
-  const due = task.dueDate ? new Date(task.dueDate) : null;
+  const { data: task, isLoading: taskLoading } = useQuery({
+    queryKey: ["task", taskId],
+    queryFn: () => apiFetch<Task>(`/tasks/${taskId}/`).then(res => res.data),
+    enabled: !!taskId,
+  });
+
+  const { data: projects } = useQuery({
+    queryKey: ["projects"],
+    queryFn: () => apiFetch<{results: Project[]}>("/projects/").then(res => res.data.results),
+    enabled: !!taskId,
+  });
+
+  const { data: users } = useQuery({
+    queryKey: ["users"],
+    queryFn: () => apiFetch<{results: User[]}>("/auth/users/").then(res => res.data.results),
+    enabled: !!taskId,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiFetch(`/tasks/${id}/`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      toast.success("Task deleted");
+      onOpenChange(false);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to delete task");
+    }
+  });
+
+  if (!taskId) return <Dialog open={false} onOpenChange={onOpenChange}><DialogContent /></Dialog>;
+
+  if (taskLoading || !task) {
+    return (
+      <Dialog open={!!taskId} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-2xl flex items-center justify-center p-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  const assignee = users?.find((u) => u.id === task.assigned_to);
+  const project = projects?.find((p) => p.id === task.project);
+  const due = task.due_date ? new Date(task.due_date) : null;
   const overdue = !!due && task.status !== "done" && isPast(due) && !isToday(due);
-  const canEdit = currentUser?.role === "admin" || task.assigneeId === currentUser?.id;
+  const canEdit = currentUser?.role === "admin" || task.assigned_to === currentUser?.id;
 
   return (
     <Dialog open={!!taskId} onOpenChange={onOpenChange}>
@@ -40,23 +84,10 @@ export function TaskDetailDialog({
         </DialogHeader>
         <div className="grid gap-6 sm:grid-cols-3">
           <div className="sm:col-span-2 space-y-4">
-            <p className="text-sm leading-relaxed text-foreground">
+            <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
               {task.description || <span className="text-muted-foreground">No description.</span>}
             </p>
-            <div>
-              <h4 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Activity</h4>
-              <ol className="relative space-y-3 border-l border-border pl-4">
-                {task.activity.slice().reverse().map((a) => (
-                  <li key={a.id} className="relative">
-                    <span className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full bg-foreground/40" />
-                    <p className="text-sm">{a.text}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(a.at), { addSuffix: true })}
-                    </p>
-                  </li>
-                ))}
-              </ol>
-            </div>
+            {/* Temporary removal of local activity log until we add an activity endpoint */}
           </div>
           <div className="space-y-4 text-sm">
             <Detail icon={<Folder className="h-3.5 w-3.5" />} label="Project" value={project?.name ?? "—"} />
@@ -66,8 +97,8 @@ export function TaskDetailDialog({
               value={
                 assignee ? (
                   <span className="inline-flex items-center gap-2">
-                    <Avatar name={assignee.name} color={colorFor(assignee.name)} size={20} />
-                    {assignee.name}
+                    <Avatar name={assignee.username} color={colorFor(assignee.username)} size={20} />
+                    {assignee.username}
                   </span>
                 ) : (
                   <span className="text-muted-foreground">Unassigned</span>
@@ -91,7 +122,7 @@ export function TaskDetailDialog({
             <Detail
               icon={<Calendar className="h-3.5 w-3.5" />}
               label="Created"
-              value={formatDistanceToNow(new Date(task.createdAt), { addSuffix: true })}
+              value={formatDistanceToNow(new Date(task.created_at), { addSuffix: true })}
             />
 
             {canEdit && (
@@ -104,9 +135,10 @@ export function TaskDetailDialog({
                     variant="outline"
                     size="sm"
                     className="text-destructive hover:text-destructive"
-                    onClick={() => { deleteTask(task.id); toast.success("Task deleted"); onOpenChange(false); }}
+                    onClick={() => deleteMutation.mutate(task.id)}
+                    disabled={deleteMutation.isPending}
                   >
-                    <Trash2 className="h-4 w-4" /> Delete
+                    {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Delete
                   </Button>
                 )}
               </div>

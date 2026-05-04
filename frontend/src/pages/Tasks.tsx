@@ -131,12 +131,14 @@ export default function Tasks() {
                   </Button>
                 </div>
                 <div className="flex flex-col gap-2 p-3 min-h-[120px]">
-                  {/* Temporary task card placeholder until TaskCard is updated */}
                   {items.map((t) => (
-                    <div key={t.id} className="p-3 border rounded-md bg-card text-sm cursor-grab shadow-sm" draggable onDragStart={(e) => e.dataTransfer.setData("text/task-id", t.id.toString())}>
-                      <div className="font-medium">{t.title}</div>
-                      <div className="text-muted-foreground text-xs line-clamp-1 mt-1">{t.description}</div>
-                    </div>
+                    <TaskCard
+                      key={t.id}
+                      task={t}
+                      draggable={canMove(t)}
+                      onOpen={() => setDetailId(t.id)}
+                      onEdit={() => { setEditing(t); setDialogOpen(true); }}
+                    />
                   ))}
                   {items.length === 0 && (
                     <div className="rounded-md border border-dashed border-border px-3 py-6 text-center text-xs text-muted-foreground">
@@ -150,15 +152,14 @@ export default function Tasks() {
         </div>
       )}
 
-      {/* Temporarily commented out until rewritten */}
-      {/* <TaskDialog
+      <TaskDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         task={editing}
         defaultProjectId={projectId}
         defaultStatus={dialogStatus}
       />
-      <TaskDetailDialog taskId={detailId} onOpenChange={(v) => !v && setDetailId(null)} onEdit={(t) => { setEditing(t); setDialogOpen(true); }} /> */}
+      <TaskDetailDialog taskId={detailId} onOpenChange={(v) => !v && setDetailId(null)} onEdit={(t) => { setEditing(t); setDialogOpen(true); }} />
     </div>
   );
 }
