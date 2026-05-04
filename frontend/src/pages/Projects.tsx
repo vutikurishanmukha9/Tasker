@@ -116,8 +116,7 @@ export default function Projects() {
         </div>
       )}
 
-      {/* Temporary disable ProjectDialog until we rewrite it for React Query */}
-      {/* <ProjectDialog open={open} onOpenChange={setOpen} project={editing} /> */}
+      <ProjectDialog open={open} onOpenChange={setOpen} project={editing} />
     </div>
   );
 }
