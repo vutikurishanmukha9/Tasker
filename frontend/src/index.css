@@ -117,6 +117,9 @@
 
   body {
     @apply bg-background text-foreground;
+    background:
+      linear-gradient(180deg, hsl(var(--surface)) 0%, hsl(var(--background)) 340px),
+      hsl(var(--background));
     font-feature-settings: "ss01", "cv11";
   }
 

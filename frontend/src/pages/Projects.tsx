@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useStore } from "@/store/StoreContext";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Plus, MoreHorizontal, Trash2, Pencil } from "lucide-react";
+import { Plus, MoreHorizontal, Trash2, Pencil, Users, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar } from "@/components/Avatar";
 import { colorFor } from "@/lib/seed";
@@ -67,7 +67,7 @@ export default function Projects() {
           {projects?.map((p) => {
             const members = p.team_members || [];
             return (
-              <div key={p.id} className="group relative rounded-lg border border-border bg-card p-5 transition-colors hover:border-strong">
+              <div key={p.id} className="group relative rounded-lg border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-strong hover:shadow-md">
                 <div className="flex items-start justify-between gap-2">
                   <Link to={`/app/tasks?project=${p.id}`} className="min-w-0 flex-1">
                     <h3 className="truncate text-base font-semibold">{p.name}</h3>
@@ -95,7 +95,21 @@ export default function Projects() {
                   )}
                 </div>
 
-                <div className="mt-5 flex items-center justify-between border-t border-border/50 pt-4">
+                <div className="mt-5 grid grid-cols-2 gap-3 rounded-md bg-surface p-3 text-xs">
+                  <div>
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Users className="h-3.5 w-3.5" />
+                      Members
+                    </div>
+                    <p className="mt-1 font-semibold tabular-nums">{members.length}</p>
+                  </div>
+                  <Link to={`/app/tasks?project=${p.id}`} className="flex items-center justify-end gap-1 font-medium text-accent-soft-foreground hover:text-accent">
+                    Board
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-4">
                   <div className="flex -space-x-1.5">
                     {members.slice(0, 4).map((m) => (
                       <Avatar key={m.id} name={m.username} color={colorFor(m.username)} size={24} className="ring-2 ring-card" />

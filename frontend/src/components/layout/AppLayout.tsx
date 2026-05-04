@@ -19,7 +19,7 @@ export default function AppLayout() {
   if (!currentUser) return <Navigate to="/login" replace />;
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="flex min-h-screen w-full">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />

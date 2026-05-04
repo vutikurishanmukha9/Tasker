@@ -32,7 +32,7 @@ export function Topbar() {
   if (!currentUser) return null;
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur md:px-6">
+    <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur md:px-6">
       <GlobalSearch />
       <div className="ml-auto flex items-center gap-1.5">
         <Button variant="ghost" size="icon" className="relative h-9 w-9">

@@ -2,7 +2,7 @@ import { Task, User } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { colorFor } from "@/lib/seed";
 import { format, isPast, isToday } from "date-fns";
-import { CalendarDays, AlertCircle } from "lucide-react";
+import { CalendarDays, AlertCircle, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
@@ -43,11 +43,14 @@ export function TaskCard({
       onClick={onOpen}
       onDoubleClick={(e) => { e.stopPropagation(); onEdit(); }}
       className={cn(
-        "group rounded-md border border-border bg-card p-3 text-left transition-all hover:border-strong hover:shadow-sm",
+        "group rounded-md border border-border bg-card p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-strong hover:shadow-md",
         draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
       )}
     >
-      <p className="text-sm font-medium leading-snug text-foreground">{task.title}</p>
+      <div className="flex items-start gap-2">
+        <p className="min-w-0 flex-1 text-sm font-medium leading-snug text-foreground">{task.title}</p>
+        {draggable && <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />}
+      </div>
       {task.description && (
         <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{task.description}</p>
       )}

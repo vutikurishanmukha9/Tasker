@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useStore } from "@/store/StoreContext";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { CheckCircle2, Clock3, ListTodo, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TaskStatus, Task, Project } from "@/lib/types";
@@ -15,10 +15,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
 
-const COLUMNS: { id: TaskStatus; label: string }[] = [
-  { id: "todo", label: "To Do" },
-  { id: "in_progress", label: "In Progress" },
-  { id: "done", label: "Done" },
+const COLUMNS: { id: TaskStatus; label: string; icon: typeof ListTodo; hint: string }[] = [
+  { id: "todo", label: "To Do", icon: ListTodo, hint: "Ready to start" },
+  { id: "in_progress", label: "In Progress", icon: Clock3, hint: "Currently moving" },
+  { id: "done", label: "Done", icon: CheckCircle2, hint: "Shipped work" },
 ];
 
 export default function Tasks() {
@@ -119,6 +119,7 @@ export default function Tasks() {
         <div className="grid gap-4 lg:grid-cols-3">
           {COLUMNS.map((c) => {
             const items = tasks?.filter((t) => t.status === c.id) || [];
+            const Icon = c.icon;
             return (
               <div
                 key={c.id}
@@ -126,13 +127,19 @@ export default function Tasks() {
                 onDragLeave={() => setDragOver((d) => (d === c.id ? null : d))}
                 onDrop={(e) => onDrop(c.id, e)}
                 className={cn(
-                  "flex flex-col rounded-lg border bg-surface transition-colors",
-                  dragOver === c.id ? "border-accent" : "border-border",
+                  "flex min-h-[520px] flex-col rounded-lg border bg-surface/80 transition-colors",
+                  dragOver === c.id ? "border-accent bg-accent-soft/40" : "border-border",
                 )}
               >
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/70">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold">{c.label}</span>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-md bg-background text-muted-foreground">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <span className="block text-sm font-semibold">{c.label}</span>
+                      <span className="text-xs text-muted-foreground">{c.hint}</span>
+                    </div>
                     <span className="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
                       {items.length}
                     </span>
