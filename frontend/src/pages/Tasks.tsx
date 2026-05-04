@@ -25,6 +25,7 @@ export default function Tasks() {
   const { currentUser } = useStore();
   const queryClient = useQueryClient();
   const [params, setParams] = useSearchParams();
+  const isAdmin = currentUser?.role === "admin";
 
   // Dialog states
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -99,9 +100,11 @@ export default function Tasks() {
                 {projects?.map((p) => <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Button onClick={() => { setEditing(null); setDialogStatus("todo"); setDialogOpen(true); }} disabled={!projectId}>
-              <Plus className="h-4 w-4" /> New task
-            </Button>
+            {isAdmin && (
+              <Button onClick={() => { setEditing(null); setDialogStatus("todo"); setDialogOpen(true); }} disabled={!projectId}>
+                <Plus className="h-4 w-4" /> New task
+              </Button>
+            )}
           </>
         }
       />
@@ -134,15 +137,17 @@ export default function Tasks() {
                       {items.length}
                     </span>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    disabled={!projectId}
-                    onClick={() => { setEditing(null); setDialogStatus(c.id); setDialogOpen(true); }}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                  {isAdmin && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      disabled={!projectId}
+                      onClick={() => { setEditing(null); setDialogStatus(c.id); setDialogOpen(true); }}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
                 <div className="flex flex-col gap-2 p-3 min-h-[120px]">
                   {items.map((t) => (
