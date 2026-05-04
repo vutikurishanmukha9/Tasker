@@ -34,14 +34,14 @@ export default function Tasks() {
 
   const { data: projects, isLoading: projectsLoading } = useQuery({
     queryKey: ["projects"],
-    queryFn: () => apiFetch<Project[]>("/projects/").then(res => res.data),
+    queryFn: () => apiFetch<{results: Project[]}>("/projects/").then(res => res.data.results),
   });
 
   const projectId = params.get("project") ?? projects?.[0]?.id?.toString() ?? "";
 
   const { data: tasks, isLoading: tasksLoading } = useQuery({
     queryKey: ["tasks", projectId],
-    queryFn: () => apiFetch<Task[]>(`/tasks/?project=${projectId}`).then(res => res.data),
+    queryFn: () => apiFetch<{results: Task[]}>(`/tasks/?project=${projectId}`).then(res => res.data.results),
     enabled: !!projectId,
   });
 

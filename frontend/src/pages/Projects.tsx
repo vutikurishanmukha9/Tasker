@@ -27,7 +27,7 @@ export default function Projects() {
 
   const { data: projects, isLoading } = useQuery({
     queryKey: ["projects"],
-    queryFn: () => apiFetch<Project[]>("/projects/").then(res => res.data),
+    queryFn: () => apiFetch<{results: Project[]}>("/projects/").then(res => res.data.results),
   });
 
   const deleteMutation = useMutation({

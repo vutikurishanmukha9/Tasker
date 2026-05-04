@@ -19,7 +19,7 @@ export default function Team() {
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["users"],
-    queryFn: () => apiFetch<User[]>("/auth/users/").then(res => res.data),
+    queryFn: () => apiFetch<{results: User[]}>("/auth/users/").then(res => res.data.results),
   });
 
   const updateRoleMutation = useMutation({
