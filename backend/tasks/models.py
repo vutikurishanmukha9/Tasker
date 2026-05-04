@@ -10,6 +10,15 @@ class TaskStatus(models.TextChoices):
     DONE = "done", "Done"
 
 
+class TaskPriority(models.TextChoices):
+    """Task priority options."""
+
+    LOW = "low", "Low"
+    MEDIUM = "medium", "Medium"
+    HIGH = "high", "High"
+    URGENT = "urgent", "Urgent"
+
+
 class Task(models.Model):
     """
     Represents a task within a project.
@@ -42,6 +51,11 @@ class Task(models.Model):
         max_length=20,
         choices=TaskStatus.choices,
         default=TaskStatus.TODO,
+    )
+    priority = models.CharField(
+        max_length=20,
+        choices=TaskPriority.choices,
+        default=TaskPriority.MEDIUM,
     )
     due_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

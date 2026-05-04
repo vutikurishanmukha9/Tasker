@@ -22,6 +22,7 @@ class TaskListSerializer(serializers.ModelSerializer):
             "assigned_to",
             "assigned_to_username",
             "status",
+            "priority",
             "due_date",
             "is_overdue",
             "created_at",
@@ -53,6 +54,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
             "created_by",
             "created_by_username",
             "status",
+            "priority",
             "due_date",
             "is_overdue",
             "created_at",
@@ -75,6 +77,7 @@ class TaskCreateSerializer(serializers.ModelSerializer):
             "project",
             "assigned_to",
             "status",
+            "priority",
             "due_date",
         ]
         read_only_fields = ["id"]
@@ -114,6 +117,7 @@ class TaskUpdateSerializer(serializers.ModelSerializer):
             "description",
             "assigned_to",
             "status",
+            "priority",
             "due_date",
         ]
         read_only_fields = ["id"]
