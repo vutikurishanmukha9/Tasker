@@ -18,6 +18,7 @@ export type Project = {
 };
 
 export type TaskStatus = "todo" | "in_progress" | "done";
+export type TaskPriority = "low" | "medium" | "high" | "urgent";
 
 export type Task = {
   id: number;
@@ -30,6 +31,7 @@ export type Task = {
   created_by?: number;
   created_by_username?: string;
   status: TaskStatus;
+  priority: TaskPriority;
   due_date: string | null;
   is_overdue?: boolean;
   created_at: string;

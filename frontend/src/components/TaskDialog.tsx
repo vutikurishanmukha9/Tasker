@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Task, TaskStatus, Project, User } from "@/lib/types";
+import { Task, TaskStatus, TaskPriority, Project, User } from "@/lib/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, Loader2 } from "lucide-react";
@@ -40,6 +40,7 @@ export function TaskDialog({
   const [projectId, setProjectId] = useState<string>("");
   const [assigneeId, setAssigneeId] = useState<string>("");
   const [status, setStatus] = useState<TaskStatus>(defaultStatus ?? "todo");
+  const [priority, setPriority] = useState<TaskPriority>("medium");
   const [due, setDue] = useState<Date | undefined>();
   const [err, setErr] = useState<string | null>(null);
 
@@ -84,6 +85,7 @@ export function TaskDialog({
       setProjectId(task?.project?.toString() ?? defaultProjectId ?? projects?.[0]?.id?.toString() ?? "");
       setAssigneeId(task?.assigned_to?.toString() ?? "");
       setStatus(task?.status ?? defaultStatus ?? "todo");
+      setPriority(task?.priority ?? "medium");
       
       let initialDue: Date | undefined = undefined;
       if (task?.due_date) {
@@ -107,6 +109,7 @@ export function TaskDialog({
       description: r.data.description,
       assigned_to: assigneeId ? parseInt(assigneeId) : null,
       status,
+      priority,
       due_date: due ? format(due, "yyyy-MM-dd") : null,
     };
     
@@ -155,6 +158,18 @@ export function TaskDialog({
                   <SelectItem value="todo">To Do</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>
                   <SelectItem value="done">Done</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Priority</Label>
+              <Select value={priority} onValueChange={(v) => setPriority(v as TaskPriority)} disabled={isLoading}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
                 </SelectContent>
               </Select>
             </div>

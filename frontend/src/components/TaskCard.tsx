@@ -2,7 +2,7 @@ import { Task, User } from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { colorFor } from "@/lib/seed";
 import { format, isPast, isToday } from "date-fns";
-import { CalendarDays, AlertCircle, GripVertical } from "lucide-react";
+import { CalendarDays, AlertCircle, GripVertical, ArrowDown, ArrowRight, ArrowUp, AlertOctagon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
@@ -62,6 +62,10 @@ export function TaskCard({
               {format(due, "MMM d")}
             </span>
           )}
+          {task.priority === "low" && <ArrowDown className="h-3.5 w-3.5 text-muted-foreground" title="Low Priority" />}
+          {task.priority === "medium" && <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" title="Medium Priority" />}
+          {task.priority === "high" && <ArrowUp className="h-3.5 w-3.5 text-amber-500" title="High Priority" />}
+          {task.priority === "urgent" && <AlertOctagon className="h-3.5 w-3.5 text-destructive" title="Urgent Priority" />}
         </div>
         {assignee ? (
           <Avatar name={assignee.username} color={colorFor(assignee.username)} size={22} />

@@ -5,7 +5,7 @@ import { StatusPill } from "./StatusPill";
 import { Avatar } from "./Avatar";
 import { colorFor } from "@/lib/seed";
 import { format, formatDistanceToNow, isPast, isToday } from "date-fns";
-import { Calendar, Folder, User as UserIcon, Pencil, Trash2, AlertCircle, Loader2 } from "lucide-react";
+import { Calendar, Folder, User as UserIcon, Pencil, Trash2, AlertCircle, Loader2, ArrowDown, ArrowRight, ArrowUp, AlertOctagon, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Task, Project, User } from "@/lib/types";
 import { toast } from "sonner";
@@ -109,6 +109,19 @@ export function TaskDetailDialog({
                 ) : (
                   <span className="text-muted-foreground">Unassigned</span>
                 )
+              }
+            />
+            <Detail
+              icon={<Activity className="h-3.5 w-3.5" />}
+              label="Priority"
+              value={
+                <span className="inline-flex items-center gap-1 capitalize">
+                  {task.priority === "low" && <ArrowDown className="h-3.5 w-3.5 text-muted-foreground" />}
+                  {task.priority === "medium" && <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                  {task.priority === "high" && <ArrowUp className="h-3.5 w-3.5 text-amber-500" />}
+                  {task.priority === "urgent" && <AlertOctagon className="h-3.5 w-3.5 text-destructive" />}
+                  {task.priority || "Medium"}
+                </span>
               }
             />
             <Detail
