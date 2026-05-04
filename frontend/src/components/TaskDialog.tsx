@@ -159,7 +159,11 @@ export function TaskDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Unassigned</SelectItem>
-                  {users?.map((u) => <SelectItem key={u.id} value={u.id.toString()}>{u.username}</SelectItem>)}
+                  {users?.filter((u) => {
+                    // Only show users that are team members of the selected project
+                    const selectedProject = projects?.find(p => p.id.toString() === projectId);
+                    return selectedProject?.team_members?.some(tm => tm.id === u.id);
+                  }).map((u) => <SelectItem key={u.id} value={u.id.toString()}>{u.username}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
