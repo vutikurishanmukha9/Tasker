@@ -84,7 +84,14 @@ export function TaskDialog({
       setProjectId(task?.project?.toString() ?? defaultProjectId ?? projects?.[0]?.id?.toString() ?? "");
       setAssigneeId(task?.assigned_to?.toString() ?? "");
       setStatus(task?.status ?? defaultStatus ?? "todo");
-      setDue(task?.due_date ? new Date(task.due_date) : undefined);
+      
+      let initialDue: Date | undefined = undefined;
+      if (task?.due_date) {
+        const [y, m, d] = task.due_date.split("-");
+        initialDue = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+      }
+      setDue(initialDue);
+      
       setErr(null);
     }
   }, [open, task, defaultProjectId, defaultStatus, projects]);

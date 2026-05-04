@@ -69,7 +69,13 @@ export function TaskDetailDialog({
 
   const assignee = users?.find((u) => u.id === task.assigned_to);
   const project = projects?.find((p) => p.id === task.project);
-  const due = task.due_date ? new Date(task.due_date) : null;
+  
+  let due: Date | null = null;
+  if (task.due_date) {
+    const [y, m, d] = task.due_date.split("-");
+    due = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+  }
+  
   const overdue = !!due && task.status !== "done" && isPast(due) && !isToday(due);
   const canEdit = currentUser?.role === "admin" || task.assigned_to === currentUser?.id;
 
