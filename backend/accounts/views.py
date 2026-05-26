@@ -1,11 +1,15 @@
+from django.conf import settings
 from rest_framework import status
 from rest_framework.generics import GenericAPIView, ListAPIView, RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_simplejwt.settings import api_settings
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 
+from accounts.authentication import enforce_csrf
 from core.responses import api_response
 
 from .models import User
-from .permissions import IsAdmin
 from .serializers import (
     LoginSerializer,
     ProfileUpdateSerializer,
@@ -13,18 +17,21 @@ from .serializers import (
     UserListSerializer,
     UserSerializer,
 )
+from .cookies import clear_auth_cookies, set_auth_cookies, set_csrf_cookie
 from .services import authenticate_user, get_tokens_for_user
+from .throttles import LoginEmailRateThrottle, SignupRateThrottle, TokenRefreshRateThrottle
 
 
 class SignupView(GenericAPIView):
     """
     POST /api/v1/auth/signup/
 
-    Register a new user account. Returns JWT tokens on success.
+    Register a new user account and set JWT cookies on success.
     """
 
     serializer_class = SignupSerializer
     permission_classes = [AllowAny]
+    throttle_classes = [SignupRateThrottle]
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -32,26 +39,26 @@ class SignupView(GenericAPIView):
         user = serializer.save()
         tokens = get_tokens_for_user(user)
 
-        return api_response(
+        response = api_response(
             success=True,
             message="Account created successfully.",
-            data={
-                "user": UserSerializer(user).data,
-                "tokens": tokens,
-            },
+            data={"user": UserSerializer(user).data},
             status=status.HTTP_201_CREATED,
         )
+        set_auth_cookies(response, tokens["access"], tokens["refresh"])
+        return set_csrf_cookie(request, response)
 
 
 class LoginView(GenericAPIView):
     """
     POST /api/v1/auth/login/
 
-    Authenticate with email and password. Returns JWT tokens.
+    Authenticate with email and password and set JWT cookies.
     """
 
     serializer_class = LoginSerializer
     permission_classes = [AllowAny]
+    throttle_classes = [LoginEmailRateThrottle]
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -70,11 +77,78 @@ class LoginView(GenericAPIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        return api_response(
+        tokens = result.pop("tokens")
+        response = api_response(
             success=True,
             message="Login successful.",
             data=result,
         )
+        set_auth_cookies(response, tokens["access"], tokens["refresh"])
+        return set_csrf_cookie(request, response)
+
+
+class TokenRefreshCookieView(GenericAPIView):
+    """
+    POST /api/v1/auth/token/refresh/
+
+    Refresh JWT cookies using the HttpOnly refresh cookie.
+    """
+
+    permission_classes = [AllowAny]
+    throttle_classes = [TokenRefreshRateThrottle]
+
+    def post(self, request):
+        enforce_csrf(request)
+        raw_refresh = request.COOKIES.get(settings.JWT_REFRESH_COOKIE_NAME)
+
+        if not raw_refresh:
+            return api_response(
+                success=False,
+                message="Authentication failed.",
+                errors={"detail": "Refresh token cookie is missing."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        try:
+            refresh = RefreshToken(raw_refresh)
+            access_token = str(refresh.access_token)
+
+            if api_settings.ROTATE_REFRESH_TOKENS:
+                refresh.set_jti()
+                refresh.set_exp()
+                refresh.set_iat()
+
+            response = api_response(
+                success=True,
+                message="Token refreshed successfully.",
+                data=None,
+            )
+            set_auth_cookies(response, access_token, str(refresh))
+            return set_csrf_cookie(request, response)
+        except TokenError:
+            response = api_response(
+                success=False,
+                message="Authentication failed.",
+                errors={"detail": "Refresh token is invalid or expired."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+            clear_auth_cookies(response)
+            return response
+
+
+class LogoutView(GenericAPIView):
+    """POST /api/v1/auth/logout/ — Clear auth cookies."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        enforce_csrf(request)
+        response = api_response(
+            success=True,
+            message="Logged out successfully.",
+            data=None,
+        )
+        return clear_auth_cookies(response)
 
 
 class ProfileView(RetrieveUpdateAPIView):

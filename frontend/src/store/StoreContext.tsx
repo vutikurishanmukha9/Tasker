@@ -1,55 +1,75 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { User } from "@/lib/types";
-import { apiFetch, setTokens, getTokens } from "@/lib/api";
+import { apiFetch, onAuthenticationFailed } from "@/lib/api";
 
 type Store = {
   currentUser: User | null;
   isLoadingAuth: boolean;
-  login: (tokens: { access: string; refresh: string }, user: User) => void;
-  logout: () => void;
+  login: (user: User) => void;
+  logout: () => Promise<void>;
   setCurrentUser: (user: User) => void;
 };
 
 const StoreContext = createContext<Store | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
+  const clearProtectedState = useCallback(() => {
+    setCurrentUser(null);
+    queryClient.removeQueries({
+      predicate: (query) => {
+        const key = query.queryKey[0];
+        return ["all_tasks", "dashboard", "projects", "tasks", "users"].includes(String(key));
+      },
+    });
+  }, [queryClient]);
+
   useEffect(() => {
     const fetchProfile = async () => {
-      const tokens = getTokens();
-      if (!tokens) {
-        setIsLoadingAuth(false);
-        return;
-      }
-
       try {
         const res = await apiFetch<User>("/auth/profile/");
         setCurrentUser(res.data);
       } catch (err) {
         console.error("Failed to fetch profile", err);
-        setTokens(null);
-        setCurrentUser(null);
+        clearProtectedState();
       } finally {
         setIsLoadingAuth(false);
       }
     };
 
     fetchProfile();
-  }, []);
+  }, [clearProtectedState]);
+
+  useEffect(() => {
+    return onAuthenticationFailed(() => {
+      clearProtectedState();
+      navigate("/login", { replace: true });
+    });
+  }, [clearProtectedState, navigate]);
 
   const value: Store = {
     currentUser,
     isLoadingAuth,
-    login: (tokens, user) => {
-      setTokens(tokens);
+    login: (user) => {
       setCurrentUser(user);
     },
-    logout: () => {
-      setTokens(null);
-      setCurrentUser(null);
-      window.location.href = "/login";
+    logout: async () => {
+      try {
+        await apiFetch("/auth/logout/", {
+          method: "POST",
+          skipAuth: true,
+          retryOnAuthFailure: false,
+        });
+      } finally {
+        clearProtectedState();
+        navigate("/login", { replace: true });
+      }
     },
     setCurrentUser,
   };

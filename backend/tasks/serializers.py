@@ -123,24 +123,7 @@ class TaskUpdateSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
     def validate(self, attrs):
-        request = self.context.get("request")
         instance = self.instance
-
-        # Members can only update status
-        if request and not request.user.is_admin:
-            allowed_fields = {"status"}
-            update_fields = set(attrs.keys())
-
-            disallowed = update_fields - allowed_fields
-            if disallowed:
-                raise serializers.ValidationError(
-                    {
-                        "detail": (
-                            f"Members can only update task status. "
-                            f"Cannot modify: {', '.join(disallowed)}"
-                        )
-                    }
-                )
 
         # Validate assignment if changing assigned_to
         assigned_to = attrs.get("assigned_to")

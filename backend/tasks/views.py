@@ -1,5 +1,6 @@
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
@@ -37,8 +38,6 @@ class TaskViewSet(ModelViewSet):
     """
 
     permission_classes = [IsAdminOrAssignedMember]
-    pagination_class = None
-
     def get_queryset(self):
         user = self.request.user
 
@@ -97,15 +96,10 @@ class TaskViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
 
-        # Return full detail view
-        task = Task.objects.select_related(
-            "project", "assigned_to", "created_by"
-        ).get(id=serializer.instance.id)
-
         return api_response(
             success=True,
             message="Task created successfully.",
-            data=TaskDetailSerializer(task).data,
+            data=TaskDetailSerializer(serializer.instance).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -121,22 +115,33 @@ class TaskViewSet(ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
+        self._enforce_member_update_fields(request)
         serializer = self.get_serializer(
             instance, data=request.data, partial=partial
         )
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
-        # Return full detail view
-        task = Task.objects.select_related(
-            "project", "assigned_to", "created_by"
-        ).get(id=instance.id)
-
         return api_response(
             success=True,
             message="Task updated successfully.",
-            data=TaskDetailSerializer(task).data,
+            data=TaskDetailSerializer(serializer.instance).data,
         )
+
+    def _enforce_member_update_fields(self, request):
+        if request.user.is_admin:
+            return
+
+        disallowed = set(request.data.keys()) - {"status"}
+        if disallowed:
+            raise ValidationError(
+                {
+                    "detail": (
+                        "Members can only update task status. "
+                        f"Cannot modify: {', '.join(sorted(disallowed))}"
+                    )
+                }
+            )
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()

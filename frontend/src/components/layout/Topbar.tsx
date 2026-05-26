@@ -12,7 +12,6 @@ import {
 import { useStore } from "@/store/StoreContext";
 import { RoleBadge } from "@/components/StatusPill";
 import { colorFor } from "@/lib/seed";
-import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { DashboardData } from "@/lib/types";
@@ -20,7 +19,6 @@ import { GlobalSearch } from "@/components/GlobalSearch";
 
 export function Topbar() {
   const { currentUser, logout } = useStore();
-  const navigate = useNavigate();
 
   const { data: dashboard } = useQuery({
     queryKey: ["dashboard"],
@@ -59,7 +57,7 @@ export function Topbar() {
               <RoleBadge role={currentUser.role} />
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => { logout(); navigate("/login"); }}>
+            <DropdownMenuItem onClick={() => { void logout(); }}>
               <LogOut className="h-4 w-4" /> Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>

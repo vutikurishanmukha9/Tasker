@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Search, Folder, CheckSquare, User as UserIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, fetchAllPages } from "@/lib/api";
 import { Project, Task, User } from "@/lib/types";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -23,7 +23,7 @@ export function GlobalSearch() {
 
   const { data: tasks } = useQuery({
     queryKey: ["all_tasks"],
-    queryFn: () => apiFetch<{results: Task[]}>("/tasks/").then(res => res.data.results),
+    queryFn: () => fetchAllPages<Task>("/tasks/"),
   });
 
   const { data: users } = useQuery({

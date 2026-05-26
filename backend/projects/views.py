@@ -61,14 +61,10 @@ class ProjectViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
 
-        # Return full detail view after creation
-        project = Project.objects.select_related("created_by").get(
-            id=serializer.instance.id
-        )
         return api_response(
             success=True,
             message="Project created successfully.",
-            data=ProjectDetailSerializer(project).data,
+            data=ProjectDetailSerializer(serializer.instance).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -88,14 +84,10 @@ class ProjectViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
-        # Return full detail view after update
-        project = Project.objects.select_related("created_by").prefetch_related(
-            "team_members"
-        ).get(id=instance.id)
         return api_response(
             success=True,
             message="Project updated successfully.",
-            data=ProjectDetailSerializer(project).data,
+            data=ProjectDetailSerializer(serializer.instance).data,
         )
 
     def destroy(self, request, *args, **kwargs):

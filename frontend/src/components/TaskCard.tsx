@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { useDraggable } from "@dnd-kit/core";
 
 export function TaskCard({
   task,
@@ -27,6 +28,11 @@ export function TaskCard({
   onEdit: () => void;
   onStatusChange?: (status: TaskStatus) => void;
 }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `task-${task.id}`,
+    data: { taskId: task.id },
+    disabled: !draggable,
+  });
   const { data: users } = useQuery({
     queryKey: ["users"],
     queryFn: () => apiFetch<{results: User[]}>("/auth/users/").then(res => res.data.results),
@@ -44,16 +50,19 @@ export function TaskCard({
 
   return (
     <div
-      draggable={draggable}
-      onDragStart={(e) => {
-        e.dataTransfer.setData("text/task-id", task.id.toString());
-        e.dataTransfer.effectAllowed = "move";
-      }}
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
       onClick={onOpen}
       onDoubleClick={(e) => { e.stopPropagation(); onEdit(); }}
+      style={{
+        transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+        touchAction: draggable ? "none" : undefined,
+      }}
       className={cn(
         "group rounded-xl border border-border bg-card p-3 text-left shadow-sm transition-all hover:border-border-strong hover:shadow-md",
         draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
+        isDragging && "z-50 opacity-80 shadow-lg",
       )}
     >
       <div className="flex items-start gap-2">

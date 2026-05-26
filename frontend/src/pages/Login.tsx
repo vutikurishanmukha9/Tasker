@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useStore } from "@/store/StoreContext";
 import { CheckSquare, Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 import { User } from "@/lib/types";
 
@@ -32,15 +31,15 @@ export default function Login() {
     setErr(null);
 
     try {
-      const res = await apiFetch<{ user: User; tokens: { access: string; refresh: string } }>("/auth/login/", {
+      const res = await apiFetch<{ user: User }>("/auth/login/", {
         data: { email, password },
         skipAuth: true,
       });
       
-      login(res.data.tokens, res.data.user);
+      login(res.data.user);
       nav("/app");
-    } catch (error: any) {
-      setErr(error.message || "Failed to log in");
+    } catch (error: unknown) {
+      setErr(error instanceof Error ? error.message : "Failed to log in");
     } finally {
       setIsLoading(false);
     }

@@ -12,14 +12,56 @@ import { TaskCard } from "@/components/TaskCard";
 import { TaskDetailDialog } from "@/components/TaskDetailDialog";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, fetchAllPages } from "@/lib/api";
 import { toast } from "sonner";
+import { DndContext, DragEndEvent, DragOverEvent, useDroppable } from "@dnd-kit/core";
 
 const COLUMNS: { id: TaskStatus; label: string; icon: typeof ListTodo; hint: string }[] = [
   { id: "todo", label: "To Do", icon: ListTodo, hint: "Ready to start" },
   { id: "in_progress", label: "In Progress", icon: Clock3, hint: "Currently moving" },
   { id: "done", label: "Done", icon: CheckCircle2, hint: "Shipped work" },
 ];
+
+function TaskColumn({
+  column,
+  isOver,
+  headerActions,
+  children,
+}: {
+  column: (typeof COLUMNS)[number];
+  isOver: boolean;
+  headerActions: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef } = useDroppable({ id: column.id });
+  const Icon = column.icon;
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "flex min-h-[520px] flex-col rounded-lg border bg-surface/80 transition-colors",
+        isOver ? "border-accent bg-accent-soft/40" : "border-border",
+      )}
+    >
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/70">
+        <div className="flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-background text-muted-foreground">
+            <Icon className="h-4 w-4" />
+          </span>
+          <div>
+            <span className="block text-sm font-semibold">{column.label}</span>
+            <span className="text-xs text-muted-foreground">{column.hint}</span>
+          </div>
+        </div>
+        {headerActions}
+      </div>
+      <div className="flex min-h-[120px] flex-col gap-2 p-3">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function Tasks() {
   const { currentUser } = useStore();
@@ -43,7 +85,7 @@ export default function Tasks() {
 
   const { data: tasks, isLoading: tasksLoading } = useQuery({
     queryKey: ["tasks", projectId],
-    queryFn: () => apiFetch<{results: Task[]}>(`/tasks/?project=${projectId}`).then(res => res.data.results),
+    queryFn: () => fetchAllPages<Task>(`/tasks/?project=${projectId}`),
     enabled: !!projectId,
   });
 
@@ -52,22 +94,22 @@ export default function Tasks() {
       apiFetch(`/tasks/${id}/`, { method: "PATCH", data: { status } }),
     onMutate: async ({ id, status }) => {
       await queryClient.cancelQueries({ queryKey: ["tasks", projectId] });
-      const previousTasks = queryClient.getQueryData<{results: Task[]}>(["tasks", projectId]);
+      const previousTasks = queryClient.getQueryData<Task[]>(["tasks", projectId]);
       if (previousTasks) {
-        queryClient.setQueryData(["tasks", projectId], {
-          ...previousTasks,
-          results: previousTasks.results.map((t) =>
+        queryClient.setQueryData(
+          ["tasks", projectId],
+          previousTasks.map((t) =>
             t.id === id ? { ...t, status } : t
           ),
-        });
+        );
       }
       return { previousTasks };
     },
-    onError: (err: any, variables, context) => {
+    onError: (err: unknown, variables, context) => {
       if (context?.previousTasks) {
         queryClient.setQueryData(["tasks", projectId], context.previousTasks);
       }
-      toast.error(err.message || "Failed to update status");
+      toast.error(err instanceof Error ? err.message : "Failed to update status");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
@@ -80,11 +122,18 @@ export default function Tasks() {
   const canMove = (t: Task) =>
     currentUser?.role === "admin" || t.assigned_to === currentUser?.id;
 
-  const onDrop = (status: TaskStatus, e: React.DragEvent) => {
-    e.preventDefault();
+  const onDragOver = (event: DragOverEvent) => {
+    const status = event.over?.id as TaskStatus | undefined;
+    setDragOver(status && COLUMNS.some((c) => c.id === status) ? status : null);
+  };
+
+  const onDragEnd = (event: DragEndEvent) => {
     setDragOver(null);
-    const id = e.dataTransfer.getData("text/task-id");
-    const task = tasks?.find((t) => t.id.toString() === id);
+    const status = event.over?.id as TaskStatus | undefined;
+    if (!status || !COLUMNS.some((c) => c.id === status)) return;
+
+    const id = event.active.data.current?.taskId;
+    const task = tasks?.find((t) => t.id === id);
     if (!task || !canMove(task) || task.status === status) return;
     updateStatusMutation.mutate({ id: task.id, status });
   };
@@ -134,67 +183,55 @@ export default function Tasks() {
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-3">
-          {COLUMNS.map((c) => {
-            const items = tasks?.filter((t) => t.status === c.id) || [];
-            const Icon = c.icon;
-            return (
-              <div
-                key={c.id}
-                onDragOver={(e) => { e.preventDefault(); setDragOver(c.id); }}
-                onDragLeave={() => setDragOver((d) => (d === c.id ? null : d))}
-                onDrop={(e) => onDrop(c.id, e)}
-                className={cn(
-                  "flex min-h-[520px] flex-col rounded-lg border bg-surface/80 transition-colors",
-                  dragOver === c.id ? "border-accent bg-accent-soft/40" : "border-border",
-                )}
-              >
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/70">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-md bg-background text-muted-foreground">
-                      <Icon className="h-4 w-4" />
-                    </span>
-                    <div>
-                      <span className="block text-sm font-semibold">{c.label}</span>
-                      <span className="text-xs text-muted-foreground">{c.hint}</span>
-                    </div>
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
-                      {items.length}
-                    </span>
-                  </div>
-                  {isAdmin && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      disabled={!projectId}
-                      onClick={() => { setEditing(null); setDialogStatus(c.id); setDialogOpen(true); }}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  )}
+        <DndContext onDragOver={onDragOver} onDragCancel={() => setDragOver(null)} onDragEnd={onDragEnd}>
+          <div className="grid gap-4 lg:grid-cols-3">
+            {COLUMNS.map((c) => {
+              const items = tasks?.filter((t) => t.status === c.id) || [];
+              return (
+                <div key={c.id}>
+                  <TaskColumn
+                    column={c}
+                    isOver={dragOver === c.id}
+                    headerActions={
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
+                          {items.length}
+                        </span>
+                        {isAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            disabled={!projectId}
+                            onClick={() => { setEditing(null); setDialogStatus(c.id); setDialogOpen(true); }}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    }
+                  >
+                    {items.map((t) => (
+                      <TaskCard
+                        key={t.id}
+                        task={t}
+                        draggable={canMove(t)}
+                        onOpen={() => setDetailId(t.id)}
+                        onEdit={() => { setEditing(t); setDialogOpen(true); }}
+                        onStatusChange={(status) => updateStatusMutation.mutate({ id: t.id, status })}
+                      />
+                    ))}
+                    {items.length === 0 && (
+                      <div className="rounded-md border border-dashed border-border px-3 py-6 text-center text-xs text-muted-foreground">
+                        Drop tasks here
+                      </div>
+                    )}
+                  </TaskColumn>
                 </div>
-                <div className="flex flex-col gap-2 p-3 min-h-[120px]">
-                  {items.map((t) => (
-                    <TaskCard
-                      key={t.id}
-                      task={t}
-                      draggable={canMove(t)}
-                      onOpen={() => setDetailId(t.id)}
-                      onEdit={() => { setEditing(t); setDialogOpen(true); }}
-                      onStatusChange={(status) => updateStatusMutation.mutate({ id: t.id, status })}
-                    />
-                  ))}
-                  {items.length === 0 && (
-                    <div className="rounded-md border border-dashed border-border px-3 py-6 text-center text-xs text-muted-foreground">
-                      Drop tasks here
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </DndContext>
       )}
 
       <TaskDialog

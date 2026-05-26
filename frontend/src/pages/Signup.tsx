@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/store/StoreContext";
 import { AuthShell } from "./Login";
-import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 import { User, Role } from "@/lib/types";
 import { Loader2 } from "lucide-react";
@@ -43,15 +42,15 @@ export default function Signup() {
     setErrs({});
 
     try {
-      const res = await apiFetch<{ user: User; tokens: { access: string; refresh: string } }>("/auth/signup/", {
+      const res = await apiFetch<{ user: User }>("/auth/signup/", {
         data: form,
         skipAuth: true,
       });
       
-      login(res.data.tokens, res.data.user);
+      login(res.data.user);
       nav("/app");
-    } catch (error: any) {
-      setErrs({ submit: error.message || "Failed to create account" });
+    } catch (error: unknown) {
+      setErrs({ submit: error instanceof Error ? error.message : "Failed to create account" });
     } finally {
       setIsLoading(false);
     }

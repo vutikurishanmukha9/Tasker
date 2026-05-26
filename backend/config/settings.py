@@ -139,7 +139,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # ──────────────────────────────────────────────
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "accounts.authentication.CookieJWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
@@ -164,6 +164,9 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/day",
         "user": "1000/day",
+        "login": config("LOGIN_THROTTLE_RATE", default="5/min"),
+        "signup": config("SIGNUP_THROTTLE_RATE", default="10/hour"),
+        "token_refresh": config("TOKEN_REFRESH_THROTTLE_RATE", default="30/min"),
     },
 }
 
@@ -187,6 +190,21 @@ SIMPLE_JWT = {
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
 }
+
+JWT_ACCESS_COOKIE_NAME = config("JWT_ACCESS_COOKIE_NAME", default="ttm_access")
+JWT_REFRESH_COOKIE_NAME = config("JWT_REFRESH_COOKIE_NAME", default="ttm_refresh")
+JWT_COOKIE_DOMAIN = config("JWT_COOKIE_DOMAIN", default="")
+JWT_COOKIE_SECURE = config("JWT_COOKIE_SECURE", default=not DEBUG, cast=bool)
+JWT_COOKIE_SAMESITE = config(
+    "JWT_COOKIE_SAMESITE",
+    default="Lax" if DEBUG else "None",
+)
+JWT_COOKIE_PATH = config("JWT_COOKIE_PATH", default="/")
+JWT_ACCESS_COOKIE_MAX_AGE = int(SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds())
+JWT_REFRESH_COOKIE_MAX_AGE = int(SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds())
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SECURE = JWT_COOKIE_SECURE
+CSRF_COOKIE_SAMESITE = JWT_COOKIE_SAMESITE
 
 
 # ──────────────────────────────────────────────

@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class TaskStatus(models.TextChoices):
@@ -78,6 +79,5 @@ class Task(models.Model):
         """A task is overdue if due_date < today AND status is not Done."""
         if not self.due_date:
             return False
-        from django.utils import timezone
 
         return self.due_date < timezone.now().date() and self.status != TaskStatus.DONE

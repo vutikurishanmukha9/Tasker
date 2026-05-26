@@ -11,14 +11,14 @@ describe("StatusPill Component", () => {
 
   it("renders 'In Progress' status correctly", () => {
     const { container } = render(<StatusPill status="in_progress" />);
-    expect(container.firstChild).toHaveTextContent("In progress");
-    expect(container.firstChild).toHaveClass("bg-primary/10");
+    expect(container.firstChild).toHaveTextContent("In Progress");
+    expect(container.firstChild).toHaveClass("bg-info-soft");
   });
 
   it("renders 'Done' status correctly", () => {
     const { container } = render(<StatusPill status="done" />);
     expect(container.firstChild).toHaveTextContent("Done");
-    expect(container.firstChild).toHaveClass("bg-accent/10");
+    expect(container.firstChild).toHaveClass("bg-accent-soft");
   });
 });
 
@@ -26,7 +26,7 @@ describe("RoleBadge Component", () => {
   it("renders 'Admin' role correctly", () => {
     const { container } = render(<RoleBadge role="admin" />);
     expect(container.firstChild).toHaveTextContent("Admin");
-    expect(container.firstChild).toHaveClass("bg-accent/10");
+    expect(container.firstChild).toHaveClass("bg-accent-soft");
   });
 
   it("renders 'Member' role correctly", () => {
