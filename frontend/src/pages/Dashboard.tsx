@@ -6,9 +6,10 @@ import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
 import { DashboardData } from "@/lib/types";
+import { Button } from "@/components/ui/button";
 
 export default function Dashboard() {
-  const { data: dashboard, isLoading, error } = useQuery({
+  const { data: dashboard, isLoading, error, refetch } = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => apiFetch<DashboardData>("/dashboard/").then(res => res.data),
   });
@@ -37,7 +38,7 @@ export default function Dashboard() {
           <p className="mt-2 text-sm text-destructive-soft-foreground/80 leading-relaxed">
             We couldn’t fetch workspace analytics. This can occur due to temporary database downtime or a connection issue.
           </p>
-          <Button variant="outline" size="sm" className="mt-4 border-destructive/20 text-destructive-soft-foreground bg-card hover:bg-destructive-soft/10" onClick={() => window.location.reload()}>
+          <Button variant="outline" size="sm" className="mt-4 border-destructive/20 text-destructive-soft-foreground bg-card hover:bg-destructive-soft/10" onClick={() => refetch()}>
             Retry connection
           </Button>
         </div>

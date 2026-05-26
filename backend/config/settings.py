@@ -11,6 +11,7 @@ from pathlib import Path
 
 from decouple import Csv, config
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 # ──────────────────────────────────────────────
 # Paths
@@ -21,8 +22,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ──────────────────────────────────────────────
 # Security
 # ──────────────────────────────────────────────
-SECRET_KEY = config("SECRET_KEY", default="django-insecure-change-me-in-production")
+SECRET_KEY = config("SECRET_KEY", default="")
 DEBUG = config("DEBUG", default=False, cast=bool)
+
+if not DEBUG and (not SECRET_KEY or SECRET_KEY == "django-insecure-change-me-in-production"):
+    raise ImproperlyConfigured("The SECRET_KEY setting must not be empty or insecure in production.")
+elif not SECRET_KEY:
+    # Fallback for development
+    SECRET_KEY = "django-insecure-change-me-in-production"
+
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
 
 # Railway runs behind a reverse proxy
@@ -149,6 +157,14 @@ REST_FRAMEWORK = {
     ),
     "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%SZ",
     "DATE_FORMAT": "%Y-%m-%d",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/day",
+        "user": "1000/day",
+    },
 }
 
 # Only enable the browsable API in debug mode
@@ -186,6 +202,8 @@ if CORS_ALLOWED_ORIGINS_STR:
         if origin.strip()
     ]
 else:
+    if not DEBUG:
+        raise ImproperlyConfigured("CORS_ALLOWED_ORIGINS must be configured in production when DEBUG=False.")
     # Development fallback — allow all origins
     CORS_ALLOW_ALL_ORIGINS = True
 

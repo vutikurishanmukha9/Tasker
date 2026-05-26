@@ -50,13 +50,31 @@ export default function Tasks() {
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: number; status: TaskStatus }) => 
       apiFetch(`/tasks/${id}/`, { method: "PATCH", data: { status } }),
+    onMutate: async ({ id, status }) => {
+      await queryClient.cancelQueries({ queryKey: ["tasks", projectId] });
+      const previousTasks = queryClient.getQueryData<{results: Task[]}>(["tasks", projectId]);
+      if (previousTasks) {
+        queryClient.setQueryData(["tasks", projectId], {
+          ...previousTasks,
+          results: previousTasks.results.map((t) =>
+            t.id === id ? { ...t, status } : t
+          ),
+        });
+      }
+      return { previousTasks };
+    },
+    onError: (err: any, variables, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(["tasks", projectId], context.previousTasks);
+      }
+      toast.error(err.message || "Failed to update status");
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
-    onError: (err: any) => {
-      toast.error(err.message || "Failed to update status");
-    }
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
+    },
   });
 
   const canMove = (t: Task) =>
@@ -164,6 +182,7 @@ export default function Tasks() {
                       draggable={canMove(t)}
                       onOpen={() => setDetailId(t.id)}
                       onEdit={() => { setEditing(t); setDialogOpen(true); }}
+                      onStatusChange={(status) => updateStatusMutation.mutate({ id: t.id, status })}
                     />
                   ))}
                   {items.length === 0 && (
