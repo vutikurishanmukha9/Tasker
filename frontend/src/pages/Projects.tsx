@@ -67,10 +67,10 @@ export default function Projects() {
           {projects?.map((p) => {
             const members = p.team_members || [];
             return (
-              <div key={p.id} className="group relative rounded-lg border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-strong hover:shadow-md">
+              <div key={p.id} className="group relative rounded-xl border border-border bg-card p-5 shadow-sm transition-colors duration-200 hover:border-border-strong hover:shadow-md">
                 <div className="flex items-start justify-between gap-2">
                   <Link to={`/app/tasks?project=${p.id}`} className="min-w-0 flex-1">
-                    <h3 className="truncate text-base font-semibold">{p.name}</h3>
+                    <h3 className="truncate text-base font-bold text-foreground group-hover:text-accent transition-colors duration-200">{p.name}</h3>
                     <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{p.description}</p>
                   </Link>
                   {isAdmin && (

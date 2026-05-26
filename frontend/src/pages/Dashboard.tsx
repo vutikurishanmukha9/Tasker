@@ -31,8 +31,16 @@ export default function Dashboard() {
 
   if (error || !dashboard) {
     return (
-      <div className="flex h-[50vh] items-center justify-center text-destructive">
-        Failed to load dashboard data.
+      <div className="py-16">
+        <div className="max-w-md border border-destructive/20 bg-destructive-soft p-6 rounded-xl shadow-sm">
+          <h2 className="text-base font-bold text-destructive-soft-foreground">Dashboard data unavailable</h2>
+          <p className="mt-2 text-sm text-destructive-soft-foreground/80 leading-relaxed">
+            We couldn’t fetch workspace analytics. This can occur due to temporary database downtime or a connection issue.
+          </p>
+          <Button variant="outline" size="sm" className="mt-4 border-destructive/20 text-destructive-soft-foreground bg-card hover:bg-destructive-soft/10" onClick={() => window.location.reload()}>
+            Retry connection
+          </Button>
+        </div>
       </div>
     );
   }
@@ -90,11 +98,11 @@ export default function Dashboard() {
             <span className="text-sm font-medium tabular-nums text-muted-foreground">{completion}%</span>
           </div>
           <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
-            <div className="h-full bg-accent transition-all" style={{ width: `${completion}%` }} />
+            <div className="h-full bg-accent transition-[width] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ width: `${completion}%` }} />
           </div>
           
           <div className="mt-8 space-y-4">
-            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">Task Breakdown</h3>
+            <h3 className="text-sm font-semibold text-foreground tracking-tight mb-4">Task Breakdown</h3>
             <div className="space-y-4">
               <BreakdownRow label="To Do" value={tasks_by_status.todo} total={total_tasks} className="bg-foreground/20" />
               <BreakdownRow label="In Progress" value={tasks_by_status.in_progress} total={total_tasks} className="bg-info" />
@@ -158,9 +166,9 @@ function Stat({
   tone?: "default" | "danger";
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-5">
+    <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
       <div className="flex items-center justify-between text-muted-foreground">
-        <span className="text-xs font-medium uppercase tracking-wider">{label}</span>
+        <span className="text-xs font-semibold text-muted-foreground tracking-tight">{label}</span>
         {icon}
       </div>
       <div className={cn("mt-3 text-3xl font-semibold tabular-nums", tone === "danger" && value > 0 && "text-destructive")}>

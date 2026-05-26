@@ -49,7 +49,6 @@ export default function Signup() {
       });
       
       login(res.data.tokens, res.data.user);
-      toast.success("Welcome to Tasker");
       nav("/app");
     } catch (error: any) {
       setErrs({ submit: error.message || "Failed to create account" });

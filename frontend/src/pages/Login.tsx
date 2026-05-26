@@ -38,7 +38,6 @@ export default function Login() {
       });
       
       login(res.data.tokens, res.data.user);
-      toast.success("Signed in successfully");
       nav("/app");
     } catch (error: any) {
       setErr(error.message || "Failed to log in");
@@ -100,9 +99,9 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
             </div>
             <span className="text-sm font-semibold tracking-tight">Tasker</span>
           </Link>
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-          {subtitle && <p className="mt-1.5 text-sm text-muted-foreground">{subtitle}</p>}
-          <div className="mt-8">{children}</div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
+          {subtitle && <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>}
+          <div className="mt-8 p-6 bg-card border border-border/80 rounded-xl shadow-sm">{children}</div>
         </div>
       </div>
       <div className="hidden border-l border-border surface lg:block">
