@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
 import { DashboardData } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 export default function Dashboard() {
   const { data: dashboard, isLoading, error, refetch } = useQuery({
@@ -102,13 +103,76 @@ export default function Dashboard() {
             <div className="h-full bg-accent transition-[width] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ width: `${completion}%` }} />
           </div>
           
-          <div className="mt-8 space-y-4">
+          <div className="mt-8">
             <h3 className="text-sm font-semibold text-foreground tracking-tight mb-4">Task Breakdown</h3>
-            <div className="space-y-4">
-              <BreakdownRow label="To Do" value={tasks_by_status.todo} total={total_tasks} className="bg-foreground/20" />
-              <BreakdownRow label="In Progress" value={tasks_by_status.in_progress} total={total_tasks} className="bg-info" />
-              <BreakdownRow label="Done" value={tasks_by_status.done} total={total_tasks} className="bg-accent" />
-            </div>
+            {total_tasks === 0 ? (
+              <div className="flex h-[180px] items-center justify-center text-xs text-muted-foreground border border-dashed rounded-lg">
+                No tasks available for analysis.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
+                <div className="h-[180px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: "To Do", value: tasks_by_status.todo, color: "hsl(var(--muted-foreground) / 0.25)" },
+                          { name: "In Progress", value: tasks_by_status.in_progress, color: "hsl(var(--info))" },
+                          { name: "Done", value: tasks_by_status.done, color: "hsl(var(--accent))" },
+                        ].filter((d) => d.value > 0)}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={70}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {[
+                          { name: "To Do", value: tasks_by_status.todo, color: "hsl(var(--muted-foreground) / 0.25)" },
+                          { name: "In Progress", value: tasks_by_status.in_progress, color: "hsl(var(--info))" },
+                          { name: "Done", value: tasks_by_status.done, color: "hsl(var(--accent))" },
+                        ].filter((d) => d.value > 0).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          background: "hsl(var(--card))",
+                          borderColor: "hsl(var(--border))",
+                          borderRadius: "var(--radius)",
+                          fontSize: "12px",
+                        }}
+                        itemStyle={{ color: "hsl(var(--foreground))" }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                <div className="space-y-3 text-xs">
+                  <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-muted-foreground/35" />
+                      <span className="font-medium text-muted-foreground">To Do</span>
+                    </div>
+                    <span className="font-semibold tabular-nums">{tasks_by_status.todo}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-info" />
+                      <span className="font-medium text-muted-foreground">In Progress</span>
+                    </div>
+                    <span className="font-semibold tabular-nums text-info">{tasks_by_status.in_progress}</span>
+                  </div>
+                  <div className="flex items-center justify-between pb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-accent" />
+                      <span className="font-medium text-muted-foreground">Done</span>
+                    </div>
+                    <span className="font-semibold tabular-nums text-accent">{tasks_by_status.done}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -129,19 +193,6 @@ export default function Dashboard() {
   );
 }
 
-function BreakdownRow({ label, value, total, className }: { label: string; value: number; total: number; className: string }) {
-  return (
-    <div>
-      <div className="mb-1.5 flex items-center justify-between text-sm">
-        <span className="font-medium text-foreground">{label}</span>
-        <span className="tabular-nums text-muted-foreground">{value}</span>
-      </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-        <div className={cn("h-full", className)} style={{ width: `${total ? (value / total) * 100 : 0}%` }} />
-      </div>
-    </div>
-  );
-}
 
 function Insight({ label, value, detail, danger }: { label: string; value: number; detail: string; danger?: boolean }) {
   return (

@@ -37,6 +37,7 @@ class TaskViewSet(ModelViewSet):
     """
 
     permission_classes = [IsAdminOrAssignedMember]
+    pagination_class = None
 
     def get_queryset(self):
         user = self.request.user
